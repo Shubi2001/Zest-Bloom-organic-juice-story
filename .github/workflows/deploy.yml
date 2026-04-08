@@ -1,40 +1,44 @@
-name: Deploy to EC2
+name: Deploy Next.js to EC2
 
-# Trigger: runs whenever you push to the main branch
 on:
   push:
     branches:
-      - main
+      - main   # triggers on every push to main
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest   # GitHub's own server that runs the actions
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Download your repo code onto the GitHub runner
+      # 1. Checkout code (on GitHub's server)
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: SSH into your EC2 and deploy
-      - name: Deploy to EC2 via SSH
+      # 2. SSH into EC2 and deploy
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Go to your website folder
+            # Load nvm so node/npm commands work
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
+            # Go to your app folder
             cd /var/www/zestnbloom
 
-            # If git repo not initialized here, clone it first
-            if [ ! -d ".git" ]; then
-              git clone https://github.com/Shubi2001/Zest-Bloom-organic-juice-story.git .
-            else
-              # Pull latest changes
-              git pull origin main
-            fi
+            # Pull latest code from GitHub
+            git pull origin main
 
-            # Reload Nginx (not strictly needed for static sites, but good practice)
-            sudo systemctl reload nginx
+            # Install any new dependencies
+            npm install
 
-            echo "✅ Deployment successful!"
+            # Build the Next.js app
+            npm run build
+
+            # Restart app with PM2 (zero downtime)
+            pm2 restart zest-bloom
+
+            echo "✅ Deployment done!"
