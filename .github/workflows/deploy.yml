@@ -39,6 +39,6 @@ jobs:
             npm run build
 
             # Restart app with PM2 (zero downtime)
-            pm2 restart zest-bloom
+            pm2 restart zestnbloom
 
             echo "✅ Deployment done!"
