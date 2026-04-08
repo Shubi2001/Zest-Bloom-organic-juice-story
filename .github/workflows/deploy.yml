@@ -1,44 +1,52 @@
-name: Deploy Next.js to EC2
+ name: Deploy Vite App to EC2 Nginx
 
 on:
   push:
     branches:
-      - main   # triggers on every push to main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code (on GitHub's server)
+
+      # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. SSH into EC2 and deploy
-      - name: Deploy to EC2
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Build Vite app → creates /dist folder
+      - name: Build Vite app
+        run: npm run build
+
+      # 5. Copy /dist folder contents to EC2 /var/www/zestnbloom
+      - name: Copy build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "dist/*"                  # Vite output folder
+          target: "/var/www/zestnbloom"     # Nginx serving folder
+          strip_components: 1               # removes the "dist/" prefix
+
+      # 6. Reload Nginx
+      - name: Reload Nginx
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Load nvm so node/npm commands work
-            export NVM_DIR="$HOME/.nvm"
-            source "$NVM_DIR/nvm.sh"
-
-            # Go to your app folder
-            cd /var/www/zestnbloom
-
-            # Pull latest code from GitHub
-            git pull origin main
-
-            # Install any new dependencies
-            npm install
-
-            # Build the Next.js app
-            npm run build
-
-            # Restart app with PM2 (zero downtime)
-            pm2 restart zestnbloom
-
-            echo "✅ Deployment done!"
+            sudo systemctl reload nginx
+            echo "✅ Site is live!"
