@@ -1,1 +1,40 @@
+name: Deploy to EC2
 
+# Trigger: runs whenever you push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest   # GitHub's own server that runs the actions
+
+    steps:
+      # Step 1: Download your repo code onto the GitHub runner
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: SSH into your EC2 and deploy
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Go to your website folder
+            cd /var/www/zestnbloom
+
+            # If git repo not initialized here, clone it first
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/Shubi2001/Zest-Bloom-organic-juice-story.git .
+            else
+              # Pull latest changes
+              git pull origin main
+            fi
+
+            # Reload Nginx (not strictly needed for static sites, but good practice)
+            sudo systemctl reload nginx
+
+            echo "✅ Deployment successful!"
