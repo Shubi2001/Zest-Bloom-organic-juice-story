@@ -42,6 +42,11 @@ export default function JuiceGlass({ color, fillLevel = 70, className }: JuiceGl
           />
         </motion.div>
       </div>
+
+      {/* Logo on Glass */}
+      <div className="absolute inset-x-0 top-[40%] flex flex-col items-center justify-center pointer-events-none z-20 opacity-40">
+        <span className="text-[10px] font-display font-black uppercase tracking-tighter text-juice-dark dark:text-juice-paper leading-none mix-blend-overlay">Zest & Bloom</span>
+      </div>
     </div>
   );
 }

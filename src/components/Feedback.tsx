@@ -4,6 +4,8 @@ import * as z from 'zod';
 import { motion } from 'motion/react';
 import { useJuiceTheme } from '@/src/context/ThemeContext';
 import { Send } from 'lucide-react';
+import { db, auth, handleFirestoreError, OperationType } from '@/src/firebase.tsx';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const feedbackSchema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -14,21 +16,30 @@ const feedbackSchema = z.object({
 
 type FeedbackForm = z.infer<typeof feedbackSchema>;
 
-export default function Feedback() {
+export default function Feedback({ id }: { id?: string }) {
   const { theme, colors } = useJuiceTheme();
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FeedbackForm>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FeedbackForm>({
     resolver: zodResolver(feedbackSchema),
     defaultValues: { rating: 5 }
   });
 
-  const onSubmit = (data: FeedbackForm) => {
-    console.log(data);
-    alert("Thank you for your feedback!");
-    reset();
+  const onSubmit = async (data: FeedbackForm) => {
+    const path = 'feedback';
+    try {
+      await addDoc(collection(db, path), {
+        ...data,
+        userId: auth.currentUser?.uid || null,
+        createdAt: serverTimestamp(),
+      });
+      alert("Thank you for your feedback! It has been saved.");
+      reset();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
   };
 
   return (
-    <section className="py-32 px-8 bg-juice-dark text-white rounded-[4rem] mx-4 md:mx-12 overflow-hidden relative">
+    <section id={id} className="py-32 px-8 bg-juice-dark text-juice-paper rounded-[4rem] mx-4 md:mx-12 overflow-hidden relative">
       {/* Background Accent */}
       <motion.div
         animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
@@ -86,11 +97,12 @@ export default function Feedback() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              className="w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: colors[theme] }}
             >
               <Send size={20} />
-              Send Feedback
+              {isSubmitting ? 'Sending...' : 'Send Feedback'}
             </motion.button>
           </div>
         </form>

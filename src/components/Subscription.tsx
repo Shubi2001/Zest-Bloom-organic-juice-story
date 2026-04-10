@@ -1,6 +1,9 @@
 import { motion } from 'motion/react';
 import { useJuiceTheme } from '@/src/context/ThemeContext';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
+import { db, auth, handleFirestoreError, OperationType } from '@/src/firebase.tsx';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useState } from 'react';
 
 const plans = [
   {
@@ -26,11 +29,36 @@ const plans = [
   }
 ];
 
-export default function Subscription() {
+export default function Subscription({ id }: { id?: string }) {
   const { colors } = useJuiceTheme();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleSubscribe = async (plan: typeof plans[0]) => {
+    if (!auth.currentUser) {
+      alert("Please login to subscribe!");
+      return;
+    }
+
+    setLoadingPlan(plan.name);
+    const path = 'subscriptions';
+    try {
+      await addDoc(collection(db, path), {
+        userId: auth.currentUser.uid,
+        planName: plan.name,
+        price: plan.price,
+        status: 'active',
+        startDate: serverTimestamp(),
+      });
+      alert(`Successfully subscribed to ${plan.name} plan!`);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
-    <section className="py-32 px-8 space-y-16">
+    <section id={id} className="py-32 px-8 space-y-16">
       <div className="text-center space-y-4">
         <h2 className="text-6xl md:text-8xl font-display font-black uppercase tracking-tighter">
           Choose Your <span className="text-juice-orange">Plan</span>
@@ -49,7 +77,7 @@ export default function Subscription() {
             transition={{ delay: i * 0.1 }}
             viewport={{ once: true }}
             whileHover={{ y: -10 }}
-            className="bg-white p-10 rounded-[3rem] shadow-2xl border border-juice-dark/5 space-y-8 flex flex-col"
+            className="bg-white dark:bg-white/5 p-10 rounded-[3rem] shadow-2xl border border-juice-dark/5 space-y-8 flex flex-col"
           >
             <div className="space-y-2">
               <span className="text-sm font-bold uppercase tracking-widest opacity-50">{plan.name}</span>
@@ -73,10 +101,12 @@ export default function Subscription() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-colors"
+              disabled={loadingPlan === plan.name}
+              onClick={() => handleSubscribe(plan)}
+              className="w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               style={{ backgroundColor: colors[plan.color as keyof typeof colors] }}
             >
-              Subscribe Now
+              {loadingPlan === plan.name ? <Loader2 className="animate-spin" size={20} /> : 'Subscribe Now'}
             </motion.button>
           </motion.div>
         ))}

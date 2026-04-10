@@ -9,13 +9,23 @@
   --color-juice-green: #4CAF50;
   --color-juice-red: #F44336;
   --color-juice-yellow: #FFEB3B;
-  --color-juice-dark: #1A1A1A;
-  --color-juice-paper: #FDFCF8;
+  --color-juice-dark: var(--juice-dark);
+  --color-juice-paper: var(--juice-paper);
 }
 
 @layer base {
+  :root {
+    --juice-paper: #FDFCF8;
+    --juice-dark: #1A1A1A;
+  }
+
+  .dark {
+    --juice-paper: #121212;
+    --juice-dark: #FDFCF8;
+  }
+
   body {
-    @apply bg-juice-paper text-juice-dark font-sans overflow-x-hidden;
+    @apply bg-juice-paper text-juice-dark font-sans overflow-x-hidden transition-colors duration-300;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-extrabold tracking-tight;

@@ -4,10 +4,69 @@ import { cn } from '@/src/lib/utils';
 interface JuiceBottleProps {
   color: string;
   fillLevel?: number; // 0 to 100
+  imageUrl?: string;
   className?: string;
 }
 
-export default function JuiceBottle({ color, fillLevel = 80, className }: JuiceBottleProps) {
+export default function JuiceBottle({ color, fillLevel = 80, imageUrl, className }: JuiceBottleProps) {
+  if (imageUrl) {
+    return (
+      <motion.div 
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.05 }}
+        className={cn("relative group", className)}
+      >
+        <motion.div
+          animate={{ 
+            y: [0, -15, 0],
+            rotate: [0, 2, 0]
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="relative z-10 w-full h-full"
+        >
+          <img 
+            src={imageUrl} 
+            alt="Juice Bottle" 
+            className="w-full h-full object-cover rounded-[3rem] shadow-2xl border-4 border-white dark:border-white/10"
+            referrerPolicy="no-referrer"
+          />
+          
+          {/* Logo Overlay on Bottle Label */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none">
+            <div className="bg-white/90 backdrop-blur-sm py-4 px-2 w-[80%] rounded-lg shadow-sm border border-black/5 flex flex-col items-center gap-1">
+              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: color }} />
+              <span className="text-[10px] font-display font-black uppercase tracking-tighter text-juice-dark leading-none">Zest & Bloom</span>
+              <span className="text-[6px] font-bold uppercase tracking-[0.2em] text-juice-dark/40">Organic Juice</span>
+            </div>
+          </div>
+          
+          {/* Label overlay effect */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-[3rem]" />
+        </motion.div>
+
+        {/* Dynamic Glow */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.2, 0.4, 0.2]
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute inset-0 blur-3xl -z-10 scale-110 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      </motion.div>
+    );
+  }
+
   return (
     <div className={cn("relative w-32 h-64", className)}>
       {/* Bottle Outline */}
@@ -46,6 +105,13 @@ export default function JuiceBottle({ color, fillLevel = 80, className }: JuiceB
             className="absolute left-2/3 w-3 h-3 bg-white/30 rounded-full"
           />
         </motion.div>
+      </div>
+
+      {/* Logo on SVG Bottle */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none z-20">
+        <div className="bg-white/80 backdrop-blur-sm p-2 rounded border border-black/5 flex flex-col items-center">
+          <span className="text-[8px] font-display font-black uppercase tracking-tighter text-juice-dark leading-none">Zest & Bloom</span>
+        </div>
       </div>
     </div>
   );
